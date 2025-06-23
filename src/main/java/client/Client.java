@@ -1,7 +1,11 @@
 package client;
-import java.util.Random;
-import java.util.Scanner;
 
+/**
+ * TODO (TIW) Beschreibung der Klasse ...
+ *
+ * @author iFD GmbH
+ * @author TIW
+ */
 public class Client {
 
     private int cIp;
