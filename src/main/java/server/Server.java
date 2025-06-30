@@ -25,8 +25,10 @@ public class Server {
     private BufferedReader in;
 
     public static void main(String[] args) throws IOException {
-        Server server = new Server();
-        server.start(6666);
+        while (true) {
+            Server server = new Server();
+            server.start(6666);
+        }
     }
 
     public void start(int port) throws IOException {

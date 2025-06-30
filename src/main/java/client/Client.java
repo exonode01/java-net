@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 import server.Server;
@@ -105,10 +108,88 @@ public class Client {
         System.out.println("Link Lokal Adresse: " + resp);
     }
 
+    public void receiveGlobalUnicast() {
+        String ipv6 = "2001:0005:0200:0001:0080:2000:0010:01FF";
+        System.out.println("IPv6-Adresse des Client [Global Unicast]");
+        System.out.println("Ungekürzt: " + ipv6);
+
+        // 1. IPv6 splitten
+        String[] segments = ipv6.split(":");
+
+        // 2. Führende Nullen entfernen
+        for (int i = 0; i < segments.length; i++) {
+            segments[i] = segments[i].replaceFirst("^0{1,3}", ""); // max 3 führende Nullen entfernen
+            if (segments[i].isEmpty()) segments[i] = "0";
+        }
+
+        // 3. Längsten Block aus aufeinanderfolgenden "0"-Segmenten finden
+        int bestStart = -1, bestLen = 0;
+        int currStart = -1, currLen = 0;
+
+        for (int i = 0; i < segments.length; i++) {
+            if (segments[i].equals("0")) {
+                if (currStart == -1) {
+                    currStart = i;
+                    currLen = 1;
+                } else {
+                    currLen++;
+                }
+
+                if (currLen > bestLen) {
+                    bestStart = currStart;
+                    bestLen = currLen;
+                }
+            } else {
+                currStart = -1;
+                currLen = 0;
+            }
+        }
+
+        // 4. Komprimierung anwenden: longest zero block → ::
+        StringBuilder result = new StringBuilder();
+        boolean compressed = false;
+
+        for (int i = 0; i < segments.length; ) {
+            if (i == bestStart && !compressed && bestLen > 1) {
+                result.append("::");
+                i += bestLen;
+                compressed = true;
+            } else {
+                result.append(segments[i]);
+                i++;
+                if (i < segments.length) result.append(":");
+            }
+        }
+
+        String finalResult = result.toString();
+
+        while (finalResult.contains(":::")) {
+            finalResult = finalResult.replace(":::", "::");
+        }
+
+        // 5. Ausgabe
+        System.out.println("Gekürzt : " + finalResult);
+    }
+
     public static void main(String[] args) throws IOException {
         Client client = new Client("127.0.0.1", 6666);
-        //client.sendMessage("hello server");
-        client.receiveV6();
-        //client.receiveIp();
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Auswahl IPv4 oder IPv6 [1 oder 2]");
+        String select = scanner.nextLine();
+        if (select.equals("1")) {
+            client.receiveIp();
+        } else if (select.equals("2")) {
+            System.out.println("Auswahl Link_Local oder Global Unicast [1 oder 2]");
+            select = scanner.nextLine();
+            if (select.equals("1")) {
+                client.receiveV6();
+            } else if (select.equals("2")) {
+                client.receiveGlobalUnicast();
+            } else {
+                System.err.println("Keine gültige Eingabe!");
+            }
+        } else {
+            System.err.println("Keine gültige Eingabe!");
+        }
     }
 }
